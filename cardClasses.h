@@ -1,78 +1,175 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <random>
+#include <chrono>
 
-class Card{
-    public:
-        Card(int cardNum, char cardSuit){
-            if (cardNum < 1 || cardNum > 10){
-                std::cout<<"You did not enter a valid value. Assigning you a 1\n";
-                value = 1;   
-                        
-            } else {
-                value = cardNum;
-                suit = cardSuit;
+// Card struct to represent a single playing card
+struct deckCard {
+    enum Suit { CLUBS=0, DIAMONDS, HEARTS, SPADES };
+    enum Rank { TWO = 2, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING, ACE };
+
+    Suit suit;
+    Rank rank;
+};
+
+// Deck class to represent a deck of cards
+class Deck
+{
+public:
+    Deck()
+    {
+        // Create a standard deck of 52 cards
+        for (int s = deckCard::CLUBS; s <= deckCard::SPADES; ++s)
+        {
+            for (int r = deckCard::TWO; r <= deckCard::ACE; ++r)
+            {
+                cards_.push_back(deckCard{static_cast<deckCard::Suit>(s), static_cast<deckCard::Rank>(r)});
             }
         }
+    }
 
-        Card(char cardNum, char cardSuit){
-            if(cardNum == 'J' || cardNum == 'j'){
-                value = 11;
-            } else if (cardNum =='Q' || cardNum == 'q'){
-                value = 12;
-            } else if (cardNum =='K' || cardNum == 'k'){
-                value = 13;
-            } else if (cardNum == 'A' || cardNum == 'a'){
-                value = 14;
-            } else {
-                std::cout<<"You did not enter a valid value. Assigning you a 1\n";
-                value = 1;
-                
-            }
-            suit = cardSuit;
+    // Shuffle the deck
+    void Shuffle() {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(cards_.begin(), cards_.end(), g);
+    }
+
+    // Deal a card and remove it from the deck
+    deckCard DealCard()
+    {
+        if (cards_.empty())
+        {
+            // Throw an exception if the deck is empty
+            throw std::out_of_range("Deck is empty");
         }
+        deckCard dealt_card = cards_.back();
+        cards_.pop_back();
+        return dealt_card;
+    }
 
+private:
+    std::vector<deckCard> cards_;
+
+};
+
+class Card
+{
+public:
+    Card(int cardNum, int cardSuit)
+    {
+        value = cardNum;
+        if (cardSuit == 0)
+        {
+            suit = 'c';
+        }
+        else if (cardSuit == 1)
+        {
+            suit = 'd';
+        }
+        else if (cardSuit == 2)
+        {
+            suit = 'h';
+        }
+        else if (cardSuit == 3)
+        {
+            suit = 's';
+        }
+    }
         int value;
         char suit;
 };
 
-class Hand{
-    public:
-        Hand(const Card card1, const Card card2, const Card card3, const Card card4, const Card card5){
-            myHand.push_back(card1);
-            counter[card1.value]++;
-            myHand.push_back(card2);
-            counter[card2.value]++;
-            myHand.push_back(card3);
-            counter[card3.value]++;
-            myHand.push_back(card4);
-            counter[card4.value]++;
-            myHand.push_back(card5);    
-            counter[card5.value]++; 
+class TempHand {
+public:
+    TempHand() {}
 
-            orderCards();        
-            flushCheck();
-            straightCheck();
-            fourOfAKindCheck();
-            threeOfAKindCheck();
-            pair1Check();
-            pair2Check();    
-            getHandRank();
-            highCard = myHand[0].value;    
+    // Add a card to the temporary hand
+    void AddCard(const Card& card) {
+        hand_.push_back(card);
+    }
 
-            for (int i = 0; i < 5; i++){
-               myHandValues[i] = myHand[i].value;
-            }
+    // Clear the temporary hand
+    void ClearHand() {
+        hand_.clear();
+    }
+
+    // Remove card by index
+    void RemoveCard(int chooseCard){
+        auto index = hand_.begin() + chooseCard;
+        hand_.erase(index);
+    }
+
+    // Get the temporary hand
+    const std::vector<Card>& GetHand() const {
+        return hand_;
+    }
+
+    // Display the hand
+    void DisplayHand() const
+    {
+        for (const Card &card : hand_)
+        {
+            std::cout << card.value << " of " << card.suit << std::endl;
         }
+    }
 
-        int getRank(){
-            return rank;
+    // Get the number of cards in the temporary hand
+    int GetNumCards() const {
+        return hand_.size();
+    }
+
+private:
+    std::vector<Card> hand_;
+};
+
+
+class Hand
+{
+public:
+    Hand(){}
+    void clearHand(){
+        myHand.clear();
+    }
+    void buildHand(const std::vector<Card>& cards)
+    {
+        myHand.push_back(cards[0]);
+        counter[cards[0].value]++;
+        myHand.push_back(cards[1]);
+        counter[cards[1].value]++;
+        myHand.push_back(cards[2]);
+        counter[cards[2].value]++;
+        myHand.push_back(cards[3]);
+        counter[cards[3].value]++;
+        myHand.push_back(cards[4]);
+        counter[cards[4].value]++;
+
+        orderCards();
+        flushCheck();
+        straightCheck();
+        fourOfAKindCheck();
+        threeOfAKindCheck();
+        pair1Check();
+        pair2Check();
+        getHandRank();
+        highCard = myHand[0].value;
+
+        for (int i = 0; i < 5; i++)
+        {
+            myHandValues[i] = myHand[i].value;
         }
+    }
 
-        int getHighCard(){
-            return highCard;
-        }
+    int getRank()
+    {
+        return rank;
+    }
 
-    
+    int getHighCard()
+    {
+        return highCard;
+    }    
 
     void displayCards(){
         for(int i = 0; i < 5; i++){
@@ -209,7 +306,6 @@ class Hand{
                 rank = 10;
             }           
         }
-
 };
 
 class Compare{
@@ -231,7 +327,7 @@ class Compare{
 
 
 
-        void showWinner(){
+        int showWinner(){
             if(hand1Rank == hand2Rank){
                 switch(hand1Rank){
                     case 2: //straight flush.  high card tie breaker                
@@ -240,16 +336,19 @@ class Compare{
                             std::cout<<"is the same value as \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Tie!\n";
+                            return 0;
                         } else if (hand1HighCard > hand2HighCard){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";     
+                            return 1;               
                         } else if (hand1HighCard < hand2HighCard){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 2 Wins!\n";                      
+                            std::cout<<"Hand 2 Wins!\n";   
+                            return 2;                   
                         }
                         break;
                     case 3: //4 of a kind.  4ofakind value then high card
@@ -258,16 +357,19 @@ class Compare{
                             std::cout<<"is the same value as \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Tie!\n";
+                            return 0;
                         } else if (handsToCompare[0].fourOfAKindValue > handsToCompare[1].fourOfAKindValue){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";          
+                            return 1;          
                         } else if (handsToCompare[0].fourOfAKindValue < handsToCompare[1].fourOfAKindValue){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 2 Wins!\n";                      
+                            std::cout<<"Hand 2 Wins!\n";    
+                            return 2;                  
                         }
                         break;   
                     case 4:      //full house.  three pair value , then 2 pair tiebreaker                
@@ -277,27 +379,32 @@ class Compare{
                                 std::cout<<"is the same value as \n";
                                 handsToCompare[1].displayCards();
                                 std::cout<<"Tie!\n";
+                                return 0;
                             } else if (handsToCompare[0].pair1Value > handsToCompare[1].pair1Value){
                                 handsToCompare[0].displayCards();
                                 std::cout<<"is greater than \n";
                                 handsToCompare[1].displayCards();
-                                std::cout<<"Hand 1 Wins!\n";                    
+                                std::cout<<"Hand 1 Wins!\n";   
+                                return 1;                 
                             } else if (handsToCompare[0].pair1Value < handsToCompare[1].pair1Value){
                                 handsToCompare[0].displayCards();
                                 std::cout<<"is less than \n";
                                 handsToCompare[1].displayCards();
                                 std::cout<<"Hand 2 Wins!\n";
+                                return 2;
                             }
                         } else if (handsToCompare[0].threeOfAKindValue > handsToCompare[1].threeOfAKindValue){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";        
+                            return 1;            
                         } else if (handsToCompare[0].threeOfAKindValue < handsToCompare[1].threeOfAKindValue){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 2 Wins!\n";                      
+                            std::cout<<"Hand 2 Wins!\n";     
+                            return 2;                 
                         }
                         break;
                     case 5: //flush.  high card descending                        
@@ -306,17 +413,20 @@ class Compare{
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                                 
+                            std::cout<<"Hand 1 Wins!\n";    
+                            return 1;                             
                         } else if (newTieBreaker == 1){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 2 Wins!\n";                                  
+                            std::cout<<"Hand 2 Wins!\n";   
+                            return 2;                               
                         } else if (newTieBreaker == -1){
                             handsToCompare[0].displayCards();
                             std::cout<<"is the same value as \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Tie!\n";                                    
+                            std::cout<<"Tie!\n";    
+                            return 0;                                
                         }
                         break;
                     case 6:  //straight.  high card
@@ -325,16 +435,19 @@ class Compare{
                             std::cout<<"is the same value as \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Tie!\n";
+                            return 0;
                         } else if (hand1HighCard > hand2HighCard){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";      
+                            return 1;              
                         } else if (hand1HighCard < hand2HighCard){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Hand 2 Wins!\n";
+                            return 2;
                         }      
                         break;
                     case 7: //3 of a kind.  three pair value then high card descending
@@ -344,28 +457,33 @@ class Compare{
                                 handsToCompare[0].displayCards();
                                 std::cout<<"is greater than \n";
                                 handsToCompare[1].displayCards();
-                                std::cout<<"Hand 1 Wins!\n";                                 
+                                std::cout<<"Hand 1 Wins!\n"; 
+                                return 1;                                
                             } else if (newTieBreaker == 1){
                                 handsToCompare[0].displayCards();
                                 std::cout<<"is less than \n";
                                 handsToCompare[1].displayCards();
-                                std::cout<<"Hand 2 Wins!\n";                                  
+                                std::cout<<"Hand 2 Wins!\n"; 
+                                return 2;                                 
                             } else if (newTieBreaker == -1){
                                 handsToCompare[0].displayCards();
                                 std::cout<<"is the same value as \n";
                                 handsToCompare[1].displayCards();
-                                std::cout<<"Tie!\n";                                    
+                                std::cout<<"Tie!\n";   
+                                return 0;                                 
                             }
                         } else if (handsToCompare[0].threeOfAKindValue > handsToCompare[1].threeOfAKindValue){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";    
+                            return 1;                
                         } else if (handsToCompare[0].threeOfAKindValue < handsToCompare[1].threeOfAKindValue){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Hand 2 Wins!\n";
+                            return 2;
                         }
                         break;
                     case 8: //2 pair.  pair2 value then pair 1 value then high card descending
@@ -376,39 +494,46 @@ class Compare{
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is greater than \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Hand 1 Wins!\n";                                 
+                                    std::cout<<"Hand 1 Wins!\n"; 
+                                    return 1;                                
                                 } else if (newTieBreaker == 1){
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is less than \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Hand 2 Wins!\n";                                  
+                                    std::cout<<"Hand 2 Wins!\n";   
+                                    return 2;                               
                                 } else if (newTieBreaker == -1){
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is the same value as \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Tie!\n";                                    
+                                    std::cout<<"Tie!\n";
+                                    return 0;                                    
                                 }
                             } else if (handsToCompare[0].pair1Value > handsToCompare[1].pair1Value){
                                 handsToCompare[0].displayCards();
                                 std::cout<<"is greater than \n";
                                 handsToCompare[1].displayCards();
-                                std::cout<<"Hand 1 Wins!\n";                    
+                                std::cout<<"Hand 1 Wins!\n";   
+                                return 1;                 
                             } else if (handsToCompare[0].pair1Value < handsToCompare[1].pair1Value){
                                 handsToCompare[0].displayCards();
                                 std::cout<<"is less than \n";
                                 handsToCompare[1].displayCards();
                                 std::cout<<"Hand 2 Wins!\n";
+                                return 2;
                             }
                         } else if (handsToCompare[0].pair2Value > handsToCompare[1].pair2Value){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";     
+                            return 1;               
                         } else if (handsToCompare[0].pair2Value < handsToCompare[1].pair2Value){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Hand 2 Wins!\n";
+                            return 2;
                         }
                         break;
                     case 9: // pair.  pair 1 value, then high card descending
@@ -418,28 +543,33 @@ class Compare{
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is greater than \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Hand 1 Wins!\n";                                 
+                                    std::cout<<"Hand 1 Wins!\n";  
+                                    return 1;                               
                                 } else if (newTieBreaker == 1){
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is less than \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Hand 2 Wins!\n";                                  
+                                    std::cout<<"Hand 2 Wins!\n";  
+                                    return 2;                                
                                 } else if (newTieBreaker == -1){
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is the same value as \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Tie!\n";                                    
+                                    std::cout<<"Tie!\n";    
+                                    return 0;                                
                                 }
                         } else if (handsToCompare[0].pair1Value > handsToCompare[1].pair1Value){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";      
+                            return 1;              
                         } else if (handsToCompare[0].pair1Value < handsToCompare[1].pair1Value){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Hand 2 Wins!\n";
+                            return 2;
                         }
                         break;
                     case 10:  //high card
@@ -449,28 +579,33 @@ class Compare{
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is greater than \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Hand 1 Wins!\n";                                 
+                                    std::cout<<"Hand 1 Wins!\n";  
+                                    return 1;                               
                                 } else if (newTieBreaker == 1){
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is less than \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Hand 2 Wins!\n";                                  
+                                    std::cout<<"Hand 2 Wins!\n";  
+                                    return 2;                                
                                 } else if (newTieBreaker == -1){
                                     handsToCompare[0].displayCards();
                                     std::cout<<"is the same value as \n";
                                     handsToCompare[1].displayCards();
-                                    std::cout<<"Tie!\n";                                    
+                                    std::cout<<"Tie!\n";      
+                                    return 0;                              
                                 }
                         } else if (hand1HighCard > hand2HighCard){
                             handsToCompare[0].displayCards();
                             std::cout<<"is greater than \n";
                             handsToCompare[1].displayCards();
-                            std::cout<<"Hand 1 Wins!\n";                    
+                            std::cout<<"Hand 1 Wins!\n";     
+                            return 1;               
                         } else if (hand1HighCard < hand2HighCard){
                             handsToCompare[0].displayCards();
                             std::cout<<"is less than \n";
                             handsToCompare[1].displayCards();
                             std::cout<<"Hand 2 Wins!\n";
+                            return 2;
                         }      
                         break;
                 }                      
@@ -480,13 +615,16 @@ class Compare{
                     handsToCompare[0].displayCards();
                     std::cout<<"is greater than \n";
                     handsToCompare[1].displayCards();
-                    std::cout<<"Hand 1 Wins!\n";                  
+                    std::cout<<"Hand 1 Wins!\n";   
+                    return 1;               
             } else if (hand1Rank > hand2Rank){
                     handsToCompare[0].displayCards();
                     std::cout<<"is less than \n";
                     handsToCompare[1].displayCards();
-                    std::cout<<"Hand 2 Wins!\n";                   
+                    std::cout<<"Hand 2 Wins!\n";   
+                    return 2;                
             }
+            return 0;
         }
 
     private:
@@ -503,4 +641,44 @@ class Compare{
         }
 
         int newTieBreaker;
+};
+
+class Player {
+public:
+    Player(int starting_chips, int check) : chips_(starting_chips), humanOrAi(check), tempHand_(), hand_() {}
+
+    // Add a card to the player's hand
+    void AddCard(const Card& card) {
+        tempHand_.AddCard(card);
+    }
+
+    // Clear the player's hand
+    void ClearHand() {
+        tempHand_.ClearHand();
+    }
+
+    // Get the player's hand
+    const std::vector<Card>& GetHand() const {
+        return tempHand_.GetHand();
+    }
+
+    // Get the number of chips the player has
+    int GetChips() const {
+        return chips_;
+    }
+
+    // Add chips to the player's stack
+    void AddChips(int amount) {
+        chips_ += amount;
+    }
+
+    // Remove chips from the player's stack
+    void RemoveChips(int amount) {
+        chips_ -= amount;
+    }
+
+    TempHand tempHand_;
+    Hand hand_;
+    int chips_;
+    int humanOrAi;
 };
